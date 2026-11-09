@@ -244,7 +244,9 @@ LabelEditingProvider.prototype.update = function(
   }
 
   if (isEmptyText(newLabel)) {
-    newLabel = null;
+
+    // `name` is required by the DMN schema, so it is kept as an empty string
+    newLabel = is(element, 'dmn:TextAnnotation') ? null : '';
   }
 
   this._modeling.updateLabel(element, newLabel, newBounds);

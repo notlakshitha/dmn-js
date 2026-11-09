@@ -1,6 +1,8 @@
 import { expect } from 'chai';
 import {
   bootstrapModeler,
+  getDmnJS,
+  getDrdJS,
   inject
 } from 'test/TestHelper';
 
@@ -105,6 +107,63 @@ describe('features/modeling - create elements', function() {
       expect(di.$type).to.eql('dmndi:DMNEdge');
       expect(di.id).to.match(/DMNEdge_/);
     }));
+
+
+    forEach([
+      'dmn:Decision',
+      'dmn:InputData',
+      'dmn:KnowledgeSource',
+      'dmn:BusinessKnowledgeModel'
+    ], function(type) {
+
+      it('should create ' + type + ' with empty name', inject(function(elementFactory) {
+
+        // when
+        var shape = elementFactory.createShape({ type: type });
+
+        // then
+        // name is required by the DMN schema
+        expect(shape.businessObject.name).to.equal('');
+      }));
+
+    });
+
+
+    it('should keep name of given business object', inject(
+      function(drdFactory, elementFactory) {
+
+        // given
+        var businessObject = drdFactory.create('dmn:Decision');
+
+        // when
+        var decision = elementFactory.createShape({
+          type: 'dmn:Decision',
+          businessObject: businessObject
+        });
+
+        // then
+        expect(decision.businessObject.name).not.to.exist;
+      }
+    ));
+
+
+    it('should export name of unnamed decision', async function() {
+
+      // given
+      var decision = getDrdJS().invoke(function(canvas, elementFactory, modeling) {
+        var shape = elementFactory.createShape({ type: 'dmn:Decision' });
+
+        return modeling.createShape(shape, { x: 100, y: 100 }, canvas.getRootElement());
+      });
+
+      // when
+      var { xml } = await getDmnJS().saveXML({ format: true });
+
+      // then
+      expect(xml).to.match(
+        new RegExp('<decision id="' + decision.id + '" name="">')
+      );
+    });
   });
 
 
